@@ -7,6 +7,7 @@ import argparse
 BOX = 1
 ROW = 2
 COL = 3
+LABELS = [1,2,3,4,5,6,7,8,9]
 
 def crossOff(values, nums):
     """
@@ -81,21 +82,35 @@ class Sudoku:
         Returns the first variable with assignment epsilon
         i.e. first square in the board that is unassigned.
         """
-        raise NotImplementedError()
+        for r in xrange(0, 9):
+            for c in xrange(0, 9):
+                if self.board[r][c] == 0:
+                    return (r,c)
+        # return None if all variables are assigned
+        return None
 
     def complete(self):
         """
         IMPLEMENT FOR PART 1
         Returns true if the assignment is complete. 
         """
-        raise NotImplementedError()
+        # if firstEpsilonVariable() returns None, board is complete
+        if self.firstEpsilonVariable():
+            return False
+        else:
+            return True
 
     def variableDomain(self, r, c):
         """
         IMPLEMENT FOR PART 1
         Returns current domain for the (row, col) variable .
         """
-        raise NotImplementedError()
+        # Assume we are passed unassigned variable!
+        domain = set([1,2,3,4,5,6,7,8,9])
+        for num in range(1,10):
+            if num in self.row(r) or num in self.col(c) or num in self.box(self.box_id(r,c)):
+                domain.remove(num)
+        return domain
 
     # PART 2
     def updateFactor(self, factor_type, i):
@@ -105,13 +120,14 @@ class Sudoku:
         `factor_type` is one of BOX, ROW, COL 
         `i` is an index between 0 and 8.
         """
-        raise NotImplementedError()
-        # values = []
-        # if factor_type == BOX:
-            
-        # if factor_type == ROW:
-            
-        # if factor_type == COL:
+        values = deepcopy(LABELS)
+        if factor_type == BOX:
+            self.factorNumConflicts[factor_type, i] = crossOff(values, self.box(i))
+        if factor_type == ROW:
+            self.factorNumConflicts[factor_type, i] = crossOff(values, self.row(i))     
+        if factor_type == COL:
+            self.factorNumConflicts[factor_type, i] = crossOff(values, self.col(i))
+        self.factorRemaining[factor_type, i] = values
             
         
     def updateAllFactors(self):
@@ -120,14 +136,18 @@ class Sudoku:
         Update the values remaining for all factors.
         There is one factor for each row, column, and box.
         """
-        raise NotImplementedError()
+        for factor_type in [BOX, ROW, COL]:
+            for i in xrange(0,9):
+                self.updateFactor(factor_type, i)
 
     def updateVariableFactors(self, variable):
         """
         IMPLEMENT FOR PART 2
         Update all the factors impacting a variable (neighbors in factor graph).
         """
-        raise NotImplementedError()
+        self.updateFactor(BOX, self.box_id(variable[0], variable[1]))
+        self.updateFactor(ROW, variable[0])
+        self.updateFactor(COL, variable[1])
 
     # CSP SEARCH CODE
     def nextVariable(self):
@@ -516,9 +536,14 @@ def doc(fn):
     import IPython.display
     return IPython.display.HTML(pydoc.html.docroutine(fn))
     # print pydoc.render_doc(fn, "Help on %s")
-    
-if __name__ == '__main__':
-    sys.exit(main(sys.argv[1:]))
+
+s = Sudoku(boardEasy)
+s.updateVariableFactors((0,0))
+print s.factorRemaining
+print s.factorNumConflicts
+
+# if __name__ == '__main__':
+#     sys.exit(main(sys.argv[1:]))
 
 
 
