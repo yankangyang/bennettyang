@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*- 
+
 # multiAgents.py
 # --------------
 # Licensing Information:  You are free to use or extend these projects for
@@ -110,6 +113,57 @@ class MinimaxAgent(MultiAgentSearchAgent):
     """
       Your minimax agent (question 2)
     """
+    def value(self, gameState, agentIndex, currentDepth): 
+        # everytime when value() is called, we check if we need to reset 
+        if agentIndex >= gameState.getNumAgents():
+            agentIndex = 0 # reset agents
+            currentDepth += 1 # update depth˙
+
+        # evaluate if in terminal state
+        if currentDepth == self.depth or gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+
+        if agentIndex == 0:
+            return self.maxValue(gameState, agentIndex, currentDepth)
+        else:
+            return self.minValue(gameState, agentIndex, currentDepth)
+        
+    def minValue(self, gameState, agentIndex, currentDepth):
+        # (VALUE, ACTION) tuples
+        v = (float("inf"), "undet") 
+        
+        if not gameState.getLegalActions(agentIndex):
+            return self.evaluationFunction(gameState)
+
+        # list of legal actions (minus stops)
+        legalActions = [action for action in gameState.getLegalActions(agentIndex) if action != "Stop"]
+
+        for action in legalActions:
+            temp = self.value(gameState.generateSuccessor(agentIndex, action), agentIndex + 1, currentDepth)
+            if type(temp) is tuple:
+                temp = temp[0] 
+
+            if temp < v[0]:
+              v = (temp, action)
+        return v
+
+    def maxValue(self, gameState, agentIndex, currentDepth):
+        v = (float("-inf"), "undet")
+        
+        if not gameState.getLegalActions(agentIndex):
+            return self.evaluationFunction(gameState)
+
+        legalActions = [action for action in gameState.getLegalActions(agentIndex) if action != "Stop"]
+
+        for action in legalActions:
+            temp = self.value(gameState.generateSuccessor(agentIndex, action), agentIndex + 1, currentDepth)
+            if type(temp) is tuple:
+                temp = temp[0] 
+
+            if temp > v[0]:
+              v = (temp, action)
+
+        return v
 
     def getAction(self, gameState):
         """
@@ -129,24 +183,143 @@ class MinimaxAgent(MultiAgentSearchAgent):
             Returns the total number of agents in the game
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        currentDepth = 0
+        agentIndex = 0
+        val = self.value(gameState, agentIndex, currentDepth)
+        return val[1] # return action
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
       Your minimax agent with alpha-beta pruning (question 3)
     """
+    def value(self, gameState, agentIndex, currentDepth, alpha, beta): 
+        if agentIndex >= gameState.getNumAgents():
+            agentIndex = 0 # reset agents
+            currentDepth += 1 # update depth
+
+        # evaluate if in terminal state
+        if currentDepth == self.depth or gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+
+        if agentIndex == 0:
+            return self.maxValue(gameState, agentIndex, currentDepth, alpha, beta)
+        else:
+            return self.minValue(gameState, agentIndex, currentDepth, alpha, beta)
+        
+    def minValue(self, gameState, agentIndex, currentDepth, alpha, beta):
+        v = (float("inf"), "undet") 
+        
+        if not gameState.getLegalActions(agentIndex):
+            return self.evaluationFunction(gameState)
+
+        # list of legal actions
+        legalActions = [action for action in gameState.getLegalActions(agentIndex) if action != "Stop"]
+
+        for action in legalActions:
+            temp = self.value(gameState.generateSuccessor(agentIndex, action), agentIndex + 1, currentDepth, alpha, beta)
+            if type(temp) is tuple:
+                temp = temp[0] 
+
+            if temp < v[0]:
+              v = (temp, action)
+
+            if v[0] < alpha: # hard inequalities: piazza question
+                return v
+
+            beta = min(beta, v[0])
+
+        return v
+
+    def maxValue(self, gameState, agentIndex, currentDepth, alpha, beta):
+        v = (float("-inf"), "undet")
+        
+        if not gameState.getLegalActions(agentIndex):
+            return self.evaluationFunction(gameState)
+
+        legalActions = [action for action in gameState.getLegalActions(agentIndex) if action != "Stop"]
+
+        for action in legalActions:
+            temp = self.value(gameState.generateSuccessor(agentIndex, action), agentIndex + 1, currentDepth, alpha, beta)
+            if type(temp) is tuple:
+                temp = temp[0] 
+
+            if temp > v[0]:
+              v = (temp, action)
+
+            if v[0] > beta: # hard inequalities: piazza question
+                return v
+            alpha = max(alpha, v[0])
+        return v
 
     def getAction(self, gameState):
         """
           Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        alpha = float("-inf")
+        beta = float("inf")
+        currentDepth = 0
+        agentIndex = 0
+        val = self.value(gameState, agentIndex, currentDepth, alpha, beta)
+        return val[1] # return action
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
       Your expectimax agent (question 4)
     """
+    def value(self, gameState, agentIndex, currentDepth): 
+        if agentIndex >= gameState.getNumAgents():
+            agentIndex = 0 # reset agents
+            currentDepth += 1 # update depth
+
+        # evaluate if in terminal state
+        if currentDepth == self.depth or gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+
+        if agentIndex == 0:
+            return self.maxValue(gameState, agentIndex, currentDepth)
+        else:
+            return self.expectedValue(gameState, agentIndex, currentDepth)
+        
+    def expectedValue(self, gameState, agentIndex, currentDepth):
+        # tuples can't be modified so do it in a list
+        v = [0, "undet"]
+        
+        if not gameState.getLegalActions(agentIndex):
+            return self.evaluationFunction(gameState)
+
+        # list of legal actions
+        legalActions = [action for action in gameState.getLegalActions(agentIndex) if action != "Stop"]
+
+        p = 1.0/len(legalActions) 
+        
+        for action in legalActions:
+            temp = self.value(gameState.generateSuccessor(agentIndex, action), agentIndex + 1, currentDepth)
+            if type(temp) is tuple:
+                temp = temp[0] 
+
+            v[0] += p * temp
+            v[1] = action
+
+        return (v[0], v[1]) # return as tuple so you can you previous functions
+
+    def maxValue(self, gameState, agentIndex, currentDepth):
+        v = (float("-inf"), "undet")
+        
+        if not gameState.getLegalActions(agentIndex):
+            return self.evaluationFunction(gameState)
+
+        legalActions = [action for action in gameState.getLegalActions(agentIndex) if action != "Stop"]
+
+        for action in legalActions:
+            temp = self.value(gameState.generateSuccessor(agentIndex, action), agentIndex + 1, currentDepth)
+            if type(temp) is tuple:
+                temp = temp[0] 
+
+            if temp > v[0]:
+              v = (temp, action)
+        
+        return v
 
     def getAction(self, gameState):
         """
@@ -156,7 +329,10 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
           legal moves.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        currentDepth = 0
+        agentIndex = 0
+        val = self.value(gameState, agentIndex, currentDepth)
+        return val[1] # return action
 
 def betterEvaluationFunction(currentGameState):
     """
