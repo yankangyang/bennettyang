@@ -233,33 +233,6 @@ class Sudoku:
         return sum(self.factorNumConflicts.values())
         
     # PART 5
-
-    ### THIS CODE PRODUCES AN ENTIRELY RANDOM BOARD, NOT BASED OFF ORIGINAL
-    # def randRow(self):
-    #     row = []
-    #     choices = deepcopy(LABELS)
-    #     # get 9 random ints [1,9], without repitions
-    #     for i in xrange(0,9):
-    #         choice = random.randint(0,8-i)
-    #         row.append(choices[choice])
-    #         del choices[choice]
-    #     print row
-    #     return row
-
-    # def randomRestart(self):
-    #     """
-    #     IMPLEMENT FOR PART 5
-    #     Randomly initialize a complete, inconsistent board
-    #     with all the row factors being held consistent. 
-    #     Should call `updateAllFactors` at end.
-    #     """
-    #     board = []
-    #     for _ in range(9):
-    #         board.append(self.randRow())
-    #     self.board = board
-    #     self.updateAllFactors()
-
-
     def randomRestart(self):
         """
         IMPLEMENT FOR PART 5
@@ -287,11 +260,11 @@ class Sudoku:
         # since rows are already consistent, any two different 
         # variables from a row will be swapable
         row = random.randint(0,8)
-        choices = [i-1 for i in LABELS]
-        r1 = random.randint(0,8)
+        choices = [i-1 for i in LABELS if (row, i-1) not in self.fixedVariables]
+        r1 = random.randint(0,len(choices)-1)
         col1 = choices[r1]
         del choices[r1]
-        r2 = random.randint(0,7)
+        r2 = random.randint(0,len(choices)-1)
         col2 = choices[r2]
         return (row, col1), (row, col2)
 
