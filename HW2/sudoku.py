@@ -7,6 +7,7 @@ import argparse
 BOX = 1
 ROW = 2
 COL = 3
+LABELS = [1,2,3,4,5,6,7,8,9]
 
 def crossOff(values, nums):
     """
@@ -81,21 +82,37 @@ class Sudoku:
         Returns the first variable with assignment epsilon
         i.e. first square in the board that is unassigned.
         """
-        raise NotImplementedError()
+        for r in xrange(0, 9):
+            for c in xrange(0, 9):
+                if self.board[r][c] == 0:
+                    return (r,c)
+        # return None if all variables are assigned
+        return None
 
     def complete(self):
         """
         IMPLEMENT FOR PART 1
         Returns true if the assignment is complete. 
         """
-        raise NotImplementedError()
+        # if firstEpsilonVariable() returns None, board is complete
+        if self.firstEpsilonVariable():
+            return False
+        else:
+            return True
 
     def variableDomain(self, r, c):
         """
         IMPLEMENT FOR PART 1
         Returns current domain for the (row, col) variable .
         """
-        raise NotImplementedError()
+        # Assume we are passed an unassigned variable
+        assert(self.board[r][c] == 0)
+        domain = set(LABELS)
+        for num in LABELS:
+            # cross over values in the variables row, col and box
+            if num in self.row(r) or num in self.col(c) or num in self.box(self.box_id(r,c)):
+                domain.remove(num)
+        return domain
 
     # PART 2
     def updateFactor(self, factor_type, i):
@@ -105,13 +122,14 @@ class Sudoku:
         `factor_type` is one of BOX, ROW, COL 
         `i` is an index between 0 and 8.
         """
-        raise NotImplementedError()
-        # values = []
-        # if factor_type == BOX:
-            
-        # if factor_type == ROW:
-            
-        # if factor_type == COL:
+        values = deepcopy(LABELS)
+        if factor_type == BOX:
+            self.factorNumConflicts[factor_type, i] = crossOff(values, self.box(i))
+        if factor_type == ROW:
+            self.factorNumConflicts[factor_type, i] = crossOff(values, self.row(i))     
+        if factor_type == COL:
+            self.factorNumConflicts[factor_type, i] = crossOff(values, self.col(i))
+        self.factorRemaining[factor_type, i] = values
             
         
     def updateAllFactors(self):
@@ -120,14 +138,19 @@ class Sudoku:
         Update the values remaining for all factors.
         There is one factor for each row, column, and box.
         """
-        raise NotImplementedError()
+        for factor_type in [BOX, ROW, COL]:
+            for i in xrange(0,9):
+                self.updateFactor(factor_type, i)
 
     def updateVariableFactors(self, variable):
         """
         IMPLEMENT FOR PART 2
         Update all the factors impacting a variable (neighbors in factor graph).
         """
-        raise NotImplementedError()
+        # update just the BOX, ROW and COL the variable is in
+        self.updateFactor(BOX, self.box_id(variable[0], variable[1]))
+        self.updateFactor(ROW, variable[0])
+        self.updateFactor(COL, variable[1])
 
     # CSP SEARCH CODE
     def nextVariable(self):
@@ -146,7 +169,8 @@ class Sudoku:
         Returns new assignments with each possible value 
         assigned to the variable returned by `nextVariable`.
         """
-        raise NotImplementedError()
+        x, y = self.nextVariable()
+        return [self.setVariable(x, y, assignment) for assignment in self.variableDomain(x, y)]
 
     def getAllSuccessors(self):
         if not args.forward: 
@@ -163,7 +187,16 @@ class Sudoku:
         IMPLEMENT IN PART 4
         Returns true if all variables have non-empty domains.
         """
-        raise NotImplementedError()
+        unassigned = set()
+        for r in xrange(0, 9):
+            for c in xrange(0, 9):
+                # don't worry about assigned vars
+                if self.board[r][c]:
+                    continue
+                # unassigned variable must have some domain
+                if not self.variableDomain(r, c):
+                    return False
+        return True
 
     # LOCAL SEARCH CODE
     # Fixed variables cannot be changed by the player.
@@ -200,6 +233,33 @@ class Sudoku:
         return sum(self.factorNumConflicts.values())
         
     # PART 5
+
+    ### THIS CODE PRODUCES AN ENTIRELY RANDOM BOARD, NOT BASED OFF ORIGINAL
+    # def randRow(self):
+    #     row = []
+    #     choices = deepcopy(LABELS)
+    #     # get 9 random ints [1,9], without repitions
+    #     for i in xrange(0,9):
+    #         choice = random.randint(0,8-i)
+    #         row.append(choices[choice])
+    #         del choices[choice]
+    #     print row
+    #     return row
+
+    # def randomRestart(self):
+    #     """
+    #     IMPLEMENT FOR PART 5
+    #     Randomly initialize a complete, inconsistent board
+    #     with all the row factors being held consistent. 
+    #     Should call `updateAllFactors` at end.
+    #     """
+    #     board = []
+    #     for _ in range(9):
+    #         board.append(self.randRow())
+    #     self.board = board
+    #     self.updateAllFactors()
+
+
     def randomRestart(self):
         """
         IMPLEMENT FOR PART 5
@@ -207,8 +267,15 @@ class Sudoku:
         with all the row factors being held consistent. 
         Should call `updateAllFactors` at end.
         """
-        raise NotImplementedError()
-        # self.updateAllFactors()
+        for r in xrange(0,9):
+            for c in xrange(0,9):
+                # if unassigned, choose a random, row-valid label
+                if self.board[r][c] == 0:
+                    choices = [n for n in LABELS if n not in self.board[r]]
+                    i = random.randint(0,len(choices)-1)
+                    self.board[r][c] = choices[i]
+        print self.board
+        self.updateAllFactors()
     
     # PART 6
     def randomSwap(self):
@@ -217,8 +284,17 @@ class Sudoku:
         Returns two random variables that can be swapped without
         causing a row factor conflict.
         """
-        raise NotImplementedError()
-      
+        # since rows are already consistent, any two different 
+        # variables from a row will be swapable
+        row = random.randint(0,8)
+        choices = [i-1 for i in LABELS]
+        r1 = random.randint(0,8)
+        col1 = choices[r1]
+        del choices[r1]
+        r2 = random.randint(0,7)
+        col2 = choices[r2]
+        return (row, col1), (row, col2)
+
 
     # PART 7
     def gradientDescent(self, variable1, variable2):
@@ -226,7 +302,21 @@ class Sudoku:
         IMPLEMENT FOR PART 7
         Decide if we should swap the values of variable1 and variable2.
         """
-        raise NotImplementedError()
+        initConflicts = self.numConflicts()
+        # do the swap
+        self.modifySwap(variable1, variable2)
+        self.updateVariableFactors(variable1)
+        self.updateVariableFactors(variable2)
+        newConflicts = self.numConflicts()
+        # if numConflicts has improved, always keep swap
+        if newConflicts <= initConflicts:
+            return
+        # otherwise, keep bad swap with probability 0.001
+        else:
+            i = random.randint(1,1000)
+            if i == 1:
+                return
+            self.modifySwap(variable1, variable2)
 
         
     ### IGNORE - PRINTING CODE
@@ -516,7 +606,7 @@ def doc(fn):
     import IPython.display
     return IPython.display.HTML(pydoc.html.docroutine(fn))
     # print pydoc.render_doc(fn, "Help on %s")
-    
+
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))
 
