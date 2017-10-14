@@ -1,5 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import random as rand
+import copy
+import math
 
 #number of items
 N = 100
@@ -25,10 +28,79 @@ v = np.array([25, 27, 15, 25, 13, 15, 18, 24, 25, 30, 12, 18, 28, 30, 20, 26, 24
        22, 30, 19, 30, 19, 24, 27, 16, 12, 27, 24, 17, 12, 18, 11, 14, 27,
        13, 23, 11, 26, 22, 12, 13, 15, 20, 20, 24, 12, 10, 14, 13])
 
+# number of iterations of simulated_annealing
+MAX_ITR = 5000
+
+# swaps an item from the backpack with an item not in the backpack that can fit
+# NOT A GOOD NEIGHBOR HEURISTIC!
+def neighbor_swap(sol):
+    curr_sol = copy.deepcopy(sol)
+    while True:
+        switch_out = rand.randint(0, len(curr_sol[0])-1)
+        switch_in = rand.randint(0,99)
+        if switch_in in curr_sol[0]:
+            continue
+        elif curr_sol[2] - w[curr_sol[0][switch_out]] + w[switch_in] <= W:
+            new_items = curr_sol[0]
+            new_items[switch_out] = switch_in
+            return new_items, curr_sol[1] + v[switch_in] - v[curr_sol[0][switch_out]], curr_sol[2] + w[switch_in] - w[curr_sol[0][switch_out]]
+
+
+# removes item from bag, then fills space with as many as will fit
+# much better heuristic!
+def neighbor_remove(curr_sol):
+    neighbor = copy.deepcopy(curr_sol)
+    # remove random item
+    remove = rand.randint(0, len(neighbor[0])-1)
+    neighbor[1] -= v[neighbor[0][remove]]
+    neighbor[2] -= w[neighbor[0][remove]]
+    del neighbor[0][remove]
+    # choose a new random item, add if it fits, quit if it doesn't
+    while True:
+        new_item = rand.randint(0,99)
+        if new_item in neighbor[0]:
+            continue
+        elif neighbor[2] + w[new_item] > W:
+            return neighbor
+        else:
+            neighbor[0].append(new_item)
+            neighbor[1] += v[new_item]
+            neighbor[2] += w[new_item]
+
+def cooling(delta,i):
+    return math.exp(delta/ ((10)*pow(0.8,i // 30)) )
+
 def simulated_annealing():
-    # YOUR CODE HERE
-    # return a trace of values resulting from your simulated annealing
-    return np.random.random_integers(200,300, 10)
+    # get a dumb starting solution (maybe make random later)
+    items = list()
+    value = 0
+    weight = 0
+    item = 0
+    while True:
+        if weight + w[item] > W:
+            break
+        else:
+            items.append(item)
+            weight += w[item]
+            value += v[item]
+            item += 1
+    # solution stored as list so it is mutable
+    curr_sol = [items, value, weight]
+    trace = [value]
+    for i in range(MAX_ITR):
+        # find neighbor
+        neighbor_sol = neighbor_remove(curr_sol)
+        delta = neighbor_sol[1] - curr_sol[1]
+        # if solution is better, always accept it
+        if delta > 0:
+            curr_sol = neighbor_sol
+        # if solution is worse, accept according to (decreasing) probability
+        elif (rand.uniform(0,1) < cooling(delta,i)):
+            curr_sol = neighbor_sol
+        trace.append(curr_sol[1])
+    print "Simulated Annealing:\nValue:{}, Weight:{}\nBag:{}".format(curr_sol[1], curr_sol[2], curr_sol[0])
+    return trace
+
 
 if __name__ == "__main__":
     # Greedy result is maximize v/w

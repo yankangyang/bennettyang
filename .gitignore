@@ -2,3 +2,5 @@
 *.log
 *.out
 *.synctex.gz
+*.pyc
+*.DS_Store
