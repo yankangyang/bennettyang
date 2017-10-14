@@ -42,10 +42,28 @@ class ValueIterationAgent(ValueEstimationAgent):
         self.discount = discount
         self.iterations = iterations
         self.values = util.Counter() # A Counter is a dict with default 0
-
         # Write value iteration code here
-        "*** YOUR CODE HERE ***"
 
+        for i in range(0, self.iterations):
+          counter_values = util.Counter()
+          
+          for state in self.mdp.getStates():
+            
+            if self.mdp.isTerminal(state):
+              counter_values[state] = 0
+            
+            else:
+              maxval = float("-inf")
+            
+              for action in self.mdp.getPossibleActions(state):
+                qvalue = self.computeQValueFromValues(state,action)
+                
+                if maxval < qvalue:
+                    maxval = qvalue
+
+              counter_values[state] = maxval
+
+          self.values = counter_values
 
     def getValue(self, state):
         """
@@ -59,7 +77,15 @@ class ValueIterationAgent(ValueEstimationAgent):
           Compute the Q-value of action in state from the
           value function stored in self.values.
         """
-        "*** YOUR CODE HERE ***"
+        transition_tuples = self.mdp.getTransitionStatesAndProbs(state, action)
+        q_val = 0
+
+        for nextState, transition_prob in transition_tuples:
+            reward = self.mdp.getReward(state, action, nextState)
+            # using equation from lecture: Q(s,a) = sum(T * (R + disc*V))
+            q_val += transition_prob * (reward + (self.discount * self.values[nextState]))
+
+        return q_val
         util.raiseNotDefined()
 
     def computeActionFromValues(self, state):
@@ -71,7 +97,21 @@ class ValueIterationAgent(ValueEstimationAgent):
           there are no legal actions, which is the case at the
           terminal state, you should return None.
         """
-        "*** YOUR CODE HERE ***"
+        poss_actions = self.mdp.getPossibleActions(state)
+
+        if len(poss_actions) == 0:
+            return None
+       
+        value = float("-inf")
+        policy = None
+
+        for action in poss_actions:
+            if self.computeQValueFromValues(state, action) >= value:
+                value = self.computeQValueFromValues(state, action)
+                policy = action
+
+        return policy
+
         util.raiseNotDefined()
 
     def getPolicy(self, state):
