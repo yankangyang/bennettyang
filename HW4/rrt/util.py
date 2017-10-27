@@ -37,7 +37,6 @@ def getNewPoint(XDIM,YDIM,XY_GOAL):
     YDIM - constant representing the height of the game
     XY_GOAL - node (tuple of integers) representing the location of the goal
     """
-    # print "dimmensions are", XDIM, "x", YDIM
     if (rand.uniform(0,1) < 0.05):
         return XY_GOAL
     else:
@@ -57,6 +56,7 @@ def extend(current_node,new_point,delta):
     xdiff = current_node[0] - new_point[0]
     ydiff = current_node[1] - new_point[1]
     ratio = delta / distance(current_node, new_point)
+    # if new_point is closer than delta, just return that point
     if ratio > 1:
         return new_point
     return current_node[0] - ratio*xdiff, current_node[1] - ratio*ydiff
@@ -71,27 +71,18 @@ def isCollisionFree(obstacles,point,obs_line_width):
     obs_line_width - the length of the line segments that define each obstacle's
         boundary
     """
-    # return True
-    # assert(len(obstacles) == 1)
     for i in range(len(obstacles)):
         prev = obstacles.values()[i][0]
         for curr in obstacles.values()[i][1:]:
-            # detect past bounds of line segment
-            # smallx = min(prev[0], curr[0])
-            # bigx = max(prev[0], curr[0])
-            # smally = min(prev[1], curr[1])
-            # bigy = max(prev[1], curr[1]) 
-            # if (point[0] < smallx or point[0] > bigx or point[1] < smally or point[1] > bigy):
-            #     continue
-            # solve for A, B, C such that Ax + By + C = 0 specifies line containing 
-            # prev and curr. Use (y1 - y2)x + (x2 - x1)y + (x1y2 - x2y1) = 0
+            # solve for constants in: Ax + By + C = 0, for line containing prev + curr
+            # Use (y1 - y2)x + (x2 - x1)y + (x1y2 - x2y1) = 0
             A = prev[1] - curr[1]
             B = curr[0] - prev[0]
             C = prev[0]*curr[1] - curr[0]*prev[1]
             # distance formula from point to line
             dist = abs(A*point[0] + B*point[1] + C) / sqrt(A**2 + B**2)
-            # print "Here's our dist to", (prev[0], prev[1]), (curr[0], curr[1]), ":", dist
             if dist < obs_line_width:
+                # detect past bounds of line segment
                 max_dist_squared = distance(prev, curr)**2 + obs_line_width**2
                 if distance_squared(point, prev) > max_dist_squared or distance_squared(point, curr) > max_dist_squared:
                     continue
