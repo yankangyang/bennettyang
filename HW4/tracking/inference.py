@@ -301,24 +301,24 @@ class ParticleFilter(InferenceModule):
         pacmanPosition = gameState.getPacmanPosition()
         "*** YOUR CODE HERE ***"
 
-        allPossible = util.Counter()
-        if noisyDistance == None:
-            allPossible[self.getJailPosition()] = 1
+        if noisyDistance == None: 
+            self.particles = self.numParticles * [self.getJailPosition()] 
         
-        else:    
-            for p in self.particles:
-                trueDistance = util.manhattanDistance(p, pacmanPosition)
-                
-                if emissionModel[trueDistance] > 0:
-                    allPossible[p] += emissionModel[trueDistance]
-
-            if allPossible.totalCount() == 0:
+        else:
+            allPossible, beliefDist = util.Counter(), self.getBeliefDistribution()
+            
+            for pos in self.legalPositions:
+                mandistance = util.manhattanDistance(pos, pacmanPosition)
+                allPossible[pos] += emissionModel[mandistance] * beliefDist[pos]
+            
+            if not any(allPossible.values()): 
                 self.initializeUniformly(gameState)
-
-            else: 
-                allPossible.normalize()
-                for i in range(self.numParticles):
-                    self.particles[i] = util.sample(allPossible)
+            else:
+                temp = list()
+                
+                for i in range(0, self.numParticles):
+                    temp.append(util.sample(allPossible)) 
+                self.particles = temp
 
     def elapseTime(self, gameState):
         """
