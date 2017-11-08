@@ -15,7 +15,7 @@ class TextClassifier:
         """
         Return your full name as it appears in the class roster as well as all collaborators as a list of strings
         """
-        return ["Scott Kuindersma", "Brian Plancher"]
+        return ["Bennett Parsons", "Yankang Yang"]
 
     def q1(self):
         """
@@ -25,7 +25,10 @@ class TextClassifier:
         Given only this information, what are the most likely
         probabilities of rolling each side? (Hardcoding is fine)
         """
-        return [0.1, 0.8, 0.2, 0.0]
+        vals = [3, 1, 4, 4, 2, 1, 2, 4, 2, 1, 2, 1, 1, 1, 1, 4, 3, 4, 4, 1]
+        counts = [sum([1.0 for j in vals if (i+1) == j]) for i in range(4)]
+        normalized = [i/len(vals) for i in counts]
+        return normalized
 
     def q2(self):
         """
@@ -39,7 +42,11 @@ class TextClassifier:
         Using the same observations as in q1 and a prior with a per-side
         "strength" of 2, what are the probabilities of rolling each side??
         """
-        return [0.1, 0.8, 0.2, 0.0]
+        # just add 2 of each side to vals list from before
+        vals = [1, 1, 2, 2, 3, 3, 4, 4, 3, 1, 4, 4, 2, 1, 2, 4, 2, 1, 2, 1, 1, 1, 1, 4, 3, 4, 4, 1]
+        counts = [sum([1.0 for j in vals if (i+1) == j]) for i in range(4)]
+        normalized = [i/len(vals) for i in counts]
+        return normalized
 
     def q3(self, counts=[1,1,3,8]):
         """
@@ -59,7 +66,7 @@ class TextClassifier:
         5 times, once for each rating. We pass in the number of times each
         word shows up in any review corresponding to the current rating.
         """
-        return [0.1, 0.8, 0.2, 0.0]
+        return [(i*1.0)/sum(counts) for i in counts]
 
     def q4(self, infile):
         """
@@ -81,9 +88,22 @@ class TextClassifier:
         reviews corresponding to ranking
         nrated[ranking] is the total number of reviews with each ranking
         """
-        self.dict = {"compsci": 0, "182": 1, ".": 2}
-        self.counts = [[0,0,0],[0,0,0],[1,1,1],[0,0,0],[0,0,0]]
-        self.nrated = [0,0,1,0,0]
+        word_count = 0
+        self.dict = {}
+        self.counts = [[0]*10 for _ in range(5)]
+        self.nrated = [0]*5
+        with open("mini.train") as f:
+            reviews = f.readlines()
+            for review in reviews:
+                words = review.split()
+                score = int(words[0])
+                for word in words[1:]:
+                    if word not in self.dict:
+                        self.dict[word] = word_count
+                        word_count += 1
+                        assert(len(self.counts[score]) >= word_count)
+                        self.counts[score][self.dict[word]] += 1
+                self.nrated[score] += 1
 
     def q5(self, alpha=1):
         """
@@ -93,6 +113,7 @@ class TextClassifier:
         Alpha is the per-word "strength" of the prior (as in q2).
         (What might "fairness" mean here?)
         """
+        # definitely use self.counts
         self.F = [[0,0,0], [0,0,0], [1,8,2], [0,0,0], [0,0,0]]
 
     def q6(self, infile):
