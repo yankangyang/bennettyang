@@ -91,9 +91,9 @@ class TextClassifier:
         """
         word_count = 0
         self.dict = {}
-        self.counts = [[0]*8 for _ in range(5)]
+        self.counts = [[] for _ in range(5)]
         self.nrated = [0]*5
-        with open("mini.train") as f:
+        with open(infile) as f:
             reviews = f.readlines()
             for review in reviews:
                 words = review.split()
@@ -102,6 +102,8 @@ class TextClassifier:
                     if word not in self.dict:
                         self.dict[word] = word_count
                         word_count += 1
+                        for i in range(5):
+                            self.counts[i].append(0)
                     assert(len(self.counts[score]) >= word_count)
                     self.counts[score][self.dict[word]] += 1
                 self.nrated[score] += 1
@@ -114,13 +116,9 @@ class TextClassifier:
         Alpha is the per-word "strength" of the prior (as in q2).
         (What might "fairness" mean here?)
         """
-
-        # definitely use self.counts
-        # print self.counts
-        update = [self.q3(counts=[self.counts[score][word] + 1 for word in self.dict.values()]) for score in range(5)]
-        # print update
-        self.F = [[-log(word_prob) for word_prob in word_probs] for word_probs in update]
-        # print self.F
+        # add alpha to all counts and normalize, then take -log
+        update = [self.q3(counts=[self.counts[score][word] + alpha for word in range(len(self.dict))]) for score in range(5)]
+        self.F = [[-log(word_prob) if word_prob != 0 else 0 for word_prob in word_probs] for word_probs in update]
 
     def q6(self, infile):
         """
@@ -129,6 +127,14 @@ class TextClassifier:
         Are there any factors that won't affect your prediction?
         You'll report both the list of predicted ratings in order and the accuracy.
         """
+        with open(infile) as f:
+            reviews = f.readlines()
+            for review in reviews:
+                words = review.split()
+                score = int(words[0])
+                for word in words[1:]:
+                    pass # do stuff
+
         return ([2], 0.000000000000182)
 
     def q7(self, infile):
