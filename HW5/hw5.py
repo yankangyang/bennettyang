@@ -94,6 +94,7 @@ class TextClassifier:
         self.dict = {}
         self.counts = [[] for _ in range(5)]
         self.nrated = [0]*5
+        self.words = []       # self.dict[self.words[x]] == x
         with open(infile) as f:
             reviews = f.readlines()
             for review in reviews:
@@ -103,6 +104,7 @@ class TextClassifier:
                     if word not in self.dict:    # add new words to dict
                         self.dict[word] = word_count
                         word_count += 1
+                        self.words.append(word)
                         for i in range(5):       # expand dict as necessary
                             self.counts[i].append(0)
                     assert(len(self.counts[score]) >= word_count)
@@ -121,6 +123,8 @@ class TextClassifier:
         update = [self.q3(counts=[self.counts[score][word] + alpha for word in range(len(self.dict))]) for score in range(5)]
         self.F = [[-log(word_prob) if word_prob != 0 else 0 for word_prob in word_probs] for word_probs in update]
 
+
+# use self.F from q5
 
     def q6(self, infile):
         """
@@ -156,6 +160,8 @@ class TextClassifier:
 
 
 
+# directly calculate probabilities according to @469
+
     # def q6(self, infile):
     #     """
     #     Test time! The infile has the same format as it did before. For each review,
@@ -171,10 +177,13 @@ class TextClassifier:
     #         total = 0
     #         right = 0
     #         print "Nice counts!"
-    #         for word in self.dict:
-    #             print word, ": ",
-    #             for rating in range(5):
-    #                 print self.counts[rating][self.dict[word]],
+    #         for rating in range(5):
+    #             print rating, ": ",
+    #             for i in range(len(self.counts[rating])):
+    #                 word = self.words[i]
+    #                 count = self.counts[rating][i]
+    #                 if count > 0:
+    #                     print (word, count),
     #             print
     #         print
     #         for review in reviews:
@@ -202,7 +211,8 @@ class TextClassifier:
 
 
 
-# counting!
+
+# counting! definitely wrong I think
 
     # def q6(self, infile):
     #     """
