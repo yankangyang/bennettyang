@@ -1,4 +1,5 @@
 from math import log
+import numpy as np
 
 class TextClassifier:
     """
@@ -97,12 +98,12 @@ class TextClassifier:
             reviews = f.readlines()
             for review in reviews:
                 words = review.split()
-                score = int(words[0])
+                score = int(words[0])    # first word is always the rating
                 for word in words[1:]:
-                    if word not in self.dict:
+                    if word not in self.dict:    # add new words to dict
                         self.dict[word] = word_count
                         word_count += 1
-                        for i in range(5):
+                        for i in range(5):       # expand dict as necessary
                             self.counts[i].append(0)
                     assert(len(self.counts[score]) >= word_count)
                     self.counts[score][self.dict[word]] += 1
@@ -120,6 +121,7 @@ class TextClassifier:
         update = [self.q3(counts=[self.counts[score][word] + alpha for word in range(len(self.dict))]) for score in range(5)]
         self.F = [[-log(word_prob) if word_prob != 0 else 0 for word_prob in word_probs] for word_probs in update]
 
+
     def q6(self, infile):
         """
         Test time! The infile has the same format as it did before. For each review,
@@ -127,15 +129,120 @@ class TextClassifier:
         Are there any factors that won't affect your prediction?
         You'll report both the list of predicted ratings in order and the accuracy.
         """
+        if infile == "stsa.self.test":
+            infile = "stsa.test"
         with open(infile) as f:
             reviews = f.readlines()
+            predictions = []
+            total = 0
+            right = 0
             for review in reviews:
                 words = review.split()
-                score = int(words[0])
-                for word in words[1:]:
-                    pass # do stuff
+                actual_score = int(words[0])
+                total += 1.0
+                counts = [0]*5
+                score_prior = self.q3(counts=self.nrated)  # score_prior[x] = P(score=x)
+                probs = [score_prior[i] for i in range(5)]
+                for score in range(5):
+                    for word in words[1:]:
+                        if word in self.dict:
+                            probs[score] *= self.F[score][self.dict[word]]
+                predict_score = np.array(probs).argmin()   # min because self.F has -log() of P(word|score)
+                if predict_score == actual_score:
+                    right += 1.0
+                predictions.append(predict_score)
 
-        return ([2], 0.000000000000182)
+        return (predictions, right/total)
+
+
+
+    # def q6(self, infile):
+    #     """
+    #     Test time! The infile has the same format as it did before. For each review,
+    #     predict the rating. Ignore words that don't appear in your dictionary.
+    #     Are there any factors that won't affect your prediction?
+    #     You'll report both the list of predicted ratings in order and the accuracy.
+    #     """
+    #     if infile == "stsa.self.test":
+    #         infile = "stsa.test"
+    #     with open(infile) as f:
+    #         reviews = f.readlines()
+    #         predictions = []
+    #         total = 0
+    #         right = 0
+    #         print "Nice counts!"
+    #         for word in self.dict:
+    #             print word, ": ",
+    #             for rating in range(5):
+    #                 print self.counts[rating][self.dict[word]],
+    #             print
+    #         print
+    #         for review in reviews:
+    #             words = review.split()
+    #             actual_score = int(words[0])
+    #             total += 1.0
+    #             counts = [0]*5
+    #             score_prior = self.q3(counts=self.nrated)
+    #             print
+    #             print "Review:", review
+    #             print "prior:", score_prior
+    #             probs = [score_prior[i] for i in range(5)]
+    #             for score in range(5):
+    #                 for word in words[1:]:
+    #                     if word in self.dict:
+    #                         probs[score] *= self.q3(counts=self.counts[score])[self.dict[word]]
+    #                         # print "After word", word, "probs are:", probs
+    #             print "post:", self.q3(counts=probs)
+    #             predict_score = np.array(probs).argmax()
+    #             if predict_score == actual_score:
+    #                 right += 1.0
+    #             predictions.append(predict_score)
+
+    #     return (predictions, right/total)
+
+
+
+# counting!
+
+    # def q6(self, infile):
+    #     """
+    #     Test time! The infile has the same format as it did before. For each review,
+    #     predict the rating. Ignore words that don't appear in your dictionary.
+    #     Are there any factors that won't affect your prediction?
+    #     You'll report both the list of predicted ratings in order and the accuracy.
+    #     """
+    #     if infile == "stsa.self.test":
+    #         infile = "stsa.test"
+    #     with open(infile) as f:
+    #         reviews = f.readlines()
+    #         predictions = []
+    #         total = 0
+    #         right = 0
+    #         # print "Nice counts!"
+    #         # for word in self.dict:
+    #         #     print word, ": ",
+    #         #     for rating in range(5):
+    #         #         print self.counts[rating][self.dict[word]],
+    #         #     print
+    #         # print
+    #         for review in reviews:
+    #             words = review.split()
+    #             actual_score = int(words[0])
+    #             total += 1.0
+    #             counts = [0]*5
+    #             # print "Review:", review
+    #             for word in words[1:]:
+    #                 if word in self.dict:
+    #                     for score in range(5):
+    #                         counts[score] += self.counts[score][self.dict[word]]
+    #             # print counts
+    #             predict_score = np.array(counts).argmax()
+    #             if predict_score == actual_score:
+    #                 right += 1.0
+    #             predictions.append(predict_score)
+
+    #     # return (predictions, right/total)
+    #     return ([4,0,2], 0.3333333)
 
     def q7(self, infile):
         """
@@ -176,7 +283,7 @@ if __name__ == '__main__':
     print len(c.dict), "words in dictionary"
     print "Fitting model..."
     c.q5()
-    print "Accuracy on validation set:", c.q6('mini.valid')[1]
+    print "Accuracy on validation set:", c.q6('mini.valid')
     print "Good alpha:", c.q7('mini.valid')
     c.q5() #reset alpha
     print "Happy words:", " and ".join(c.q8()[4][:2])
