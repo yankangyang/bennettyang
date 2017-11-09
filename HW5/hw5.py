@@ -66,7 +66,8 @@ class TextClassifier:
         5 times, once for each rating. We pass in the number of times each
         word shows up in any review corresponding to the current rating.
         """
-        return [(i*1.0)/sum(counts) for i in counts]
+        s = sum(counts)
+        return [(i*1.0)/s for i in counts]
 
     def q4(self, infile):
         """
@@ -90,7 +91,7 @@ class TextClassifier:
         """
         word_count = 0
         self.dict = {}
-        self.counts = [[0]*10 for _ in range(5)]
+        self.counts = [[0]*8 for _ in range(5)]
         self.nrated = [0]*5
         with open("mini.train") as f:
             reviews = f.readlines()
@@ -101,8 +102,8 @@ class TextClassifier:
                     if word not in self.dict:
                         self.dict[word] = word_count
                         word_count += 1
-                        assert(len(self.counts[score]) >= word_count)
-                        self.counts[score][self.dict[word]] += 1
+                    assert(len(self.counts[score]) >= word_count)
+                    self.counts[score][self.dict[word]] += 1
                 self.nrated[score] += 1
 
     def q5(self, alpha=1):
@@ -113,8 +114,13 @@ class TextClassifier:
         Alpha is the per-word "strength" of the prior (as in q2).
         (What might "fairness" mean here?)
         """
+
         # definitely use self.counts
-        self.F = [[0,0,0], [0,0,0], [1,8,2], [0,0,0], [0,0,0]]
+        # print self.counts
+        update = [self.q3(counts=[self.counts[score][word] + 1 for word in self.dict.values()]) for score in range(5)]
+        # print update
+        self.F = [[-log(word_prob) for word_prob in word_probs] for word_probs in update]
+        # print self.F
 
     def q6(self, infile):
         """
