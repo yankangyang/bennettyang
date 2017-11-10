@@ -1,4 +1,5 @@
 from math import log
+from math import exp
 import numpy as np
 
 class TextClassifier:
@@ -150,8 +151,8 @@ class TextClassifier:
                 for score in range(5):
                     for word in words[1:]:
                         if word in self.dict:
-                            probs[score] *= self.F[score][self.dict[word]]
-                predict_score = np.array(probs).argmin()   # min because self.F has -log() of P(word|score)
+                            probs[score] *= exp(-self.F[score][self.dict[word]])
+                predict_score = np.array(probs).argmax()   # min because self.F has -log() of P(word|score)
                 if predict_score == actual_score:
                     right += 1.0
                 predictions.append(predict_score)
