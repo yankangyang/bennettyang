@@ -160,101 +160,6 @@ class TextClassifier:
         return (predictions, right/total)
 
 
-
-# directly calculate probabilities according to @469
-
-    # def q6(self, infile):
-    #     """
-    #     Test time! The infile has the same format as it did before. For each review,
-    #     predict the rating. Ignore words that don't appear in your dictionary.
-    #     Are there any factors that won't affect your prediction?
-    #     You'll report both the list of predicted ratings in order and the accuracy.
-    #     """
-    #     if infile == "stsa.self.test":
-    #         infile = "stsa.test"
-    #     with open(infile) as f:
-    #         reviews = f.readlines()
-    #         predictions = []
-    #         total = 0
-    #         right = 0
-    #         print "Nice counts!"
-    #         for rating in range(5):
-    #             print rating, ": ",
-    #             for i in range(len(self.counts[rating])):
-    #                 word = self.words[i]
-    #                 count = self.counts[rating][i]
-    #                 if count > 0:
-    #                     print (word, count),
-    #             print
-    #         print
-    #         for review in reviews:
-    #             words = review.split()
-    #             actual_score = int(words[0])
-    #             total += 1.0
-    #             counts = [0]*5
-    #             score_prior = self.q3(counts=self.nrated)
-    #             print
-    #             print "Review:", review
-    #             print "prior:", score_prior
-    #             probs = [score_prior[i] for i in range(5)]
-    #             for score in range(5):
-    #                 for word in words[1:]:
-    #                     if word in self.dict:
-    #                         probs[score] *= self.q3(counts=self.counts[score])[self.dict[word]]
-    #                         # print "After word", word, "probs are:", probs
-    #             print "post:", self.q3(counts=probs)
-    #             predict_score = np.array(probs).argmax()
-    #             if predict_score == actual_score:
-    #                 right += 1.0
-    #             predictions.append(predict_score)
-
-    #     return (predictions, right/total)
-
-
-
-
-# counting! definitely wrong I think
-
-    # def q6(self, infile):
-    #     """
-    #     Test time! The infile has the same format as it did before. For each review,
-    #     predict the rating. Ignore words that don't appear in your dictionary.
-    #     Are there any factors that won't affect your prediction?
-    #     You'll report both the list of predicted ratings in order and the accuracy.
-    #     """
-    #     if infile == "stsa.self.test":
-    #         infile = "stsa.test"
-    #     with open(infile) as f:
-    #         reviews = f.readlines()
-    #         predictions = []
-    #         total = 0
-    #         right = 0
-    #         # print "Nice counts!"
-    #         # for word in self.dict:
-    #         #     print word, ": ",
-    #         #     for rating in range(5):
-    #         #         print self.counts[rating][self.dict[word]],
-    #         #     print
-    #         # print
-    #         for review in reviews:
-    #             words = review.split()
-    #             actual_score = int(words[0])
-    #             total += 1.0
-    #             counts = [0]*5
-    #             # print "Review:", review
-    #             for word in words[1:]:
-    #                 if word in self.dict:
-    #                     for score in range(5):
-    #                         counts[score] += self.counts[score][self.dict[word]]
-    #             # print counts
-    #             predict_score = np.array(counts).argmax()
-    #             if predict_score == actual_score:
-    #                 right += 1.0
-    #             predictions.append(predict_score)
-
-    #     # return (predictions, right/total)
-    #     return ([4,0,2], 0.3333333)
-
     def q7(self, infile):
         """
         Alpha (q5) is a hyperparameter of this model - a tunable option that affects
@@ -267,7 +172,21 @@ class TextClassifier:
         Find and return a good value of alpha (hint: you will want to call q5 and q6).
         What happens when alpha = 0?
         """
-        return 0
+        val_list = []
+        
+        for alpha in range(5):
+            self.q5(alpha)
+            val_list.append((self.q6(infile))[1])
+
+        bestVal = 0
+        highVal = val_list[0]
+        
+        for value in range(len(val_list)):
+            if val_list[value] >= highVal:
+                highVal = val_list[value]
+                bestVal = value
+        
+        return bestVal  
 
     def q8(self):
         """
@@ -279,6 +198,8 @@ class TextClassifier:
         You'll return the strings rather than the indices, and in decreasing order of
         representativeness.
         """
+
+
         return [["182", "compsci", "."] for _ in range(5)]
 
     """
