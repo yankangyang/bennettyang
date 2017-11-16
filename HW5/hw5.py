@@ -198,9 +198,46 @@ class TextClassifier:
         You'll return the strings rather than the indices, and in decreasing order of
         representativeness.
         """
+        repwords = [] 
+        inverseDict = dict((v, k) for k, v in self.dict.items())
+        
+        for rating in range(len(self.F)):
+            bestwords = {}
+            for word in range(len(self.F[rating])):
+                # if we have strings
+                if self.counts[rating][word] != 0:
+                    
+                    min_difference = None
+                    
+                    for rating2 in range(5):
+                        if not rating2 == rating:
+                            difference = self.F[rating2][word] - self.F[rating][word]
+                            
+                            if min_difference == None:
+                                min_difference = difference
+                            
+                            elif difference < min_difference:
+                                min_difference = difference
 
+                    if len(bestwords) < 3:
+                        bestwords[word] = min_difference
 
-        return [["182", "compsci", "."] for _ in range(5)]
+                    else:
+                        bestwords = dict(sorted(bestwords.items(), key=lambda el: el[1]))
+                        key1 = bestwords.keys()[0]
+                        
+                        if bestwords[key1] < min_difference:
+                            del bestwords[key1]
+                            bestwords[word] = min_difference
+            
+            bestwords = sorted(bestwords.items(), key=lambda el: -el[1])
+            bestupdate = []
+            
+            for el in bestwords:
+                bestupdate.append(inverseDict[el[0]])
+            repwords.append(bestupdate)
+        
+        return repwords
 
     """
     You did it! If you're curious, the dataset came from (Socher 2013), which describes
